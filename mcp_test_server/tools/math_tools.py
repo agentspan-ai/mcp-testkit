@@ -37,7 +37,7 @@ def register(mcp):
     @mcp.tool()
     def math_power(base: float, exponent: float) -> str:
         """Raise base to the power of exponent."""
-        return json.dumps({"result": base ** exponent})
+        return json.dumps({"result": base**exponent})
 
     @mcp.tool()
     def math_factorial(n: int) -> str:

@@ -37,15 +37,17 @@ def register(mcp):
     @mcp.tool()
     def echo_types() -> str:
         """Return an object containing all JSON types."""
-        return json.dumps({
-            "string": "hello",
-            "integer": 42,
-            "float": 3.14,
-            "boolean": True,
-            "null": None,
-            "array": [1, "two", False],
-            "object": {"nested_key": "nested_value"},
-        })
+        return json.dumps(
+            {
+                "string": "hello",
+                "integer": 42,
+                "float": 3.14,
+                "boolean": True,
+                "null": None,
+                "array": [1, "two", False],
+                "object": {"nested_key": "nested_value"},
+            }
+        )
 
     @mcp.tool()
     def echo_empty() -> str:
@@ -67,23 +69,27 @@ def register(mcp):
         obj_param: dict,
     ) -> str:
         """Echo all parameters back as JSON."""
-        return json.dumps({
-            "str_param": str_param,
-            "int_param": int_param,
-            "float_param": float_param,
-            "bool_param": bool_param,
-            "list_param": list_param,
-            "obj_param": obj_param,
-        })
+        return json.dumps(
+            {
+                "str_param": str_param,
+                "int_param": int_param,
+                "float_param": float_param,
+                "bool_param": bool_param,
+                "list_param": list_param,
+                "obj_param": obj_param,
+            }
+        )
 
     @mcp.tool()
     def get_weather(city: str) -> str:
         """Get weather for a city. Always returns fixed deterministic data (77°F, sunny)."""
-        return json.dumps({
-            "city": city,
-            "temperature_f": 77,
-            "temperature_c": 25,
-            "condition": "sunny",
-            "humidity_pct": 45,
-            "wind_mph": 5,
-        })
+        return json.dumps(
+            {
+                "city": city,
+                "temperature_f": 77,
+                "temperature_c": 25,
+                "condition": "sunny",
+                "humidity_pct": 45,
+                "wind_mph": 5,
+            }
+        )

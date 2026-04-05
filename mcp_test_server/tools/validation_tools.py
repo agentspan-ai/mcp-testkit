@@ -22,7 +22,9 @@ def register(mcp):
         parsed = urlparse(text)
         if parsed.scheme in ("http", "https") and parsed.netloc:
             return json.dumps({"valid": True, "reason": "Text is a valid URL."})
-        return json.dumps({"valid": False, "reason": "Text is not a valid URL. Must have http/https scheme and a network location."})
+        return json.dumps(
+            {"valid": False, "reason": "Text is not a valid URL. Must have http/https scheme and a network location."}
+        )
 
     @mcp.tool()
     def validation_is_ipv4(text: str) -> str:

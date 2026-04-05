@@ -228,9 +228,7 @@ class TestStringJoin:
 
     def test_space_delimiter(self):
         mcp = _make_server()
-        assert _call(mcp, "string_join", {"items": ["hello", "world"], "delimiter": " "}) == {
-            "result": "hello world"
-        }
+        assert _call(mcp, "string_join", {"items": ["hello", "world"], "delimiter": " "}) == {"result": "hello world"}
 
     def test_empty_list(self):
         mcp = _make_server()

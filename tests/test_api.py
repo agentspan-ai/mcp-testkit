@@ -1,6 +1,5 @@
 """Tests for the HTTP REST API endpoints."""
 
-import json
 import unittest
 
 from starlette.testclient import TestClient
@@ -178,19 +177,20 @@ class TestAPIAuth(unittest.TestCase):
         self.assertEqual(r.status_code, 401)
 
     def test_wrong_auth_returns_401(self):
-        r = self.client.get("/api/math/add", params={"a": "1", "b": "2"},
-                            headers={"Authorization": "Bearer wrong"})
+        r = self.client.get("/api/math/add", params={"a": "1", "b": "2"}, headers={"Authorization": "Bearer wrong"})
         self.assertEqual(r.status_code, 401)
 
     def test_correct_auth_returns_200(self):
-        r = self.client.get("/api/math/add", params={"a": "1", "b": "2"},
-                            headers={"Authorization": "Bearer test_secret"})
+        r = self.client.get(
+            "/api/math/add", params={"a": "1", "b": "2"}, headers={"Authorization": "Bearer test_secret"}
+        )
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json(), {"result": 3.0})
 
     def test_post_with_auth(self):
-        r = self.client.post("/api/string/reverse", json={"text": "abc"},
-                             headers={"Authorization": "Bearer test_secret"})
+        r = self.client.post(
+            "/api/string/reverse", json={"text": "abc"}, headers={"Authorization": "Bearer test_secret"}
+        )
         self.assertEqual(r.json(), {"result": "cba"})
 
     def test_api_docs_requires_auth(self):
@@ -235,8 +235,9 @@ class TestOpenAPISpec(unittest.TestCase):
 
     def test_at_least_two_thirds_post(self):
         post_count = sum(1 for _, m, *_ in ENDPOINTS if m == "POST")
-        self.assertGreaterEqual(post_count / len(ENDPOINTS), 2 / 3,
-                                f"Only {post_count}/{len(ENDPOINTS)} POST endpoints")
+        self.assertGreaterEqual(
+            post_count / len(ENDPOINTS), 2 / 3, f"Only {post_count}/{len(ENDPOINTS)} POST endpoints"
+        )
 
 
 if __name__ == "__main__":

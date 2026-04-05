@@ -24,6 +24,7 @@ def _call(mcp, name, args):
 
 # ---------- math_add ----------
 
+
 class TestMathAdd:
     def test_positive_numbers(self):
         mcp = _make_server()
@@ -49,6 +50,7 @@ class TestMathAdd:
 
 # ---------- math_subtract ----------
 
+
 class TestMathSubtract:
     def test_basic(self):
         mcp = _make_server()
@@ -68,6 +70,7 @@ class TestMathSubtract:
 
 
 # ---------- math_multiply ----------
+
 
 class TestMathMultiply:
     def test_basic(self):
@@ -93,6 +96,7 @@ class TestMathMultiply:
 
 
 # ---------- math_divide ----------
+
 
 class TestMathDivide:
     def test_basic(self):
@@ -120,6 +124,7 @@ class TestMathDivide:
 
 # ---------- math_modulo ----------
 
+
 class TestMathModulo:
     def test_basic(self):
         mcp = _make_server()
@@ -142,6 +147,7 @@ class TestMathModulo:
 
 
 # ---------- math_power ----------
+
 
 class TestMathPower:
     def test_basic(self):
@@ -168,6 +174,7 @@ class TestMathPower:
 
 # ---------- math_factorial ----------
 
+
 class TestMathFactorial:
     def test_zero(self):
         mcp = _make_server()
@@ -193,6 +200,7 @@ class TestMathFactorial:
 
 
 # ---------- math_fibonacci ----------
+
 
 class TestMathFibonacci:
     def test_zero(self):

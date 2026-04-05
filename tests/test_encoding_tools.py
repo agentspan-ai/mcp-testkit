@@ -3,7 +3,6 @@
 import asyncio
 import json
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 
@@ -179,15 +178,11 @@ class TestHexDecode:
 class TestMd5:
     def test_hello(self):
         mcp = _make_server()
-        assert _call(mcp, "encoding_md5", {"text": "hello"}) == {
-            "result": "5d41402abc4b2a76b9719d911017c592"
-        }
+        assert _call(mcp, "encoding_md5", {"text": "hello"}) == {"result": "5d41402abc4b2a76b9719d911017c592"}
 
     def test_empty(self):
         mcp = _make_server()
-        assert _call(mcp, "encoding_md5", {"text": ""}) == {
-            "result": "d41d8cd98f00b204e9800998ecf8427e"
-        }
+        assert _call(mcp, "encoding_md5", {"text": ""}) == {"result": "d41d8cd98f00b204e9800998ecf8427e"}
 
     def test_deterministic(self):
         mcp = _make_server()

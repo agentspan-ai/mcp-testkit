@@ -3,7 +3,6 @@
 import asyncio
 import json
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 
@@ -102,9 +101,7 @@ class TestCollectionMerge:
         self.mcp = _make_server()
 
     def test_merge_no_conflict(self):
-        res = _call(
-            self.mcp, "collection_merge", {"dict_a": {"a": 1}, "dict_b": {"b": 2}}
-        )
+        res = _call(self.mcp, "collection_merge", {"dict_a": {"a": 1}, "dict_b": {"b": 2}})
         assert res == {"result": {"a": 1, "b": 2}}
 
     def test_merge_with_conflict(self):
@@ -168,9 +165,7 @@ class TestCollectionFilterGt:
         assert res == {"result": [10, 20, 30]}
 
     def test_filter_empty(self):
-        res = _call(
-            self.mcp, "collection_filter_gt", {"items": [], "threshold": 5}
-        )
+        res = _call(self.mcp, "collection_filter_gt", {"items": [], "threshold": 5})
         assert res == {"result": []}
 
     def test_filter_equal_not_included(self):
@@ -210,9 +205,7 @@ class TestCollectionUnique:
         assert res == {"result": [1, 2, 3]}
 
     def test_unique_strings(self):
-        res = _call(
-            self.mcp, "collection_unique", {"items": ["a", "b", "a", "c", "b"]}
-        )
+        res = _call(self.mcp, "collection_unique", {"items": ["a", "b", "a", "c", "b"]})
         assert res == {"result": ["a", "b", "c"]}
 
     def test_unique_preserves_order(self):
@@ -258,9 +251,7 @@ class TestCollectionGroupBy:
             {"name": "Bob", "dept": "sales"},
             {"name": "Carol", "dept": "eng"},
         ]
-        res = _call(
-            self.mcp, "collection_group_by", {"items": items, "key": "dept"}
-        )
+        res = _call(self.mcp, "collection_group_by", {"items": items, "key": "dept"})
         assert res == {
             "result": {
                 "eng": [
@@ -279,15 +270,11 @@ class TestCollectionGroupBy:
 
     def test_group_by_missing_key(self):
         items = [{"name": "Alice"}, {"name": "Bob", "dept": "sales"}]
-        res = _call(
-            self.mcp, "collection_group_by", {"items": items, "key": "dept"}
-        )
+        res = _call(self.mcp, "collection_group_by", {"items": items, "key": "dept"})
         assert "error" in res
 
     def test_group_by_empty_list(self):
-        res = _call(
-            self.mcp, "collection_group_by", {"items": [], "key": "whatever"}
-        )
+        res = _call(self.mcp, "collection_group_by", {"items": [], "key": "whatever"})
         assert res == {"result": {}}
 
     def test_group_by_numeric_key_values(self):
@@ -296,9 +283,7 @@ class TestCollectionGroupBy:
             {"val": 2, "group": 20},
             {"val": 3, "group": 10},
         ]
-        res = _call(
-            self.mcp, "collection_group_by", {"items": items, "key": "group"}
-        )
+        res = _call(self.mcp, "collection_group_by", {"items": items, "key": "group"})
         assert "10" in res["result"]
         assert "20" in res["result"]
         assert len(res["result"]["10"]) == 2
@@ -328,21 +313,15 @@ class TestCollectionZip:
         assert res == {"result": [[1, "a"], [2, "b"]]}
 
     def test_zip_empty(self):
-        res = _call(
-            self.mcp, "collection_zip", {"list_a": [], "list_b": []}
-        )
+        res = _call(self.mcp, "collection_zip", {"list_a": [], "list_b": []})
         assert res == {"result": []}
 
     def test_zip_one_empty(self):
-        res = _call(
-            self.mcp, "collection_zip", {"list_a": [1, 2], "list_b": []}
-        )
+        res = _call(self.mcp, "collection_zip", {"list_a": [1, 2], "list_b": []})
         assert res == {"result": []}
 
     def test_zip_single_elements(self):
-        res = _call(
-            self.mcp, "collection_zip", {"list_a": [1], "list_b": [2]}
-        )
+        res = _call(self.mcp, "collection_zip", {"list_a": [1], "list_b": [2]})
         assert res == {"result": [[1, 2]]}
 
 
@@ -354,27 +333,19 @@ class TestCollectionChunk:
         self.mcp = _make_server()
 
     def test_chunk_even(self):
-        res = _call(
-            self.mcp, "collection_chunk", {"items": [1, 2, 3, 4], "size": 2}
-        )
+        res = _call(self.mcp, "collection_chunk", {"items": [1, 2, 3, 4], "size": 2})
         assert res == {"result": [[1, 2], [3, 4]]}
 
     def test_chunk_uneven(self):
-        res = _call(
-            self.mcp, "collection_chunk", {"items": [1, 2, 3, 4, 5], "size": 2}
-        )
+        res = _call(self.mcp, "collection_chunk", {"items": [1, 2, 3, 4, 5], "size": 2})
         assert res == {"result": [[1, 2], [3, 4], [5]]}
 
     def test_chunk_size_larger_than_list(self):
-        res = _call(
-            self.mcp, "collection_chunk", {"items": [1, 2], "size": 10}
-        )
+        res = _call(self.mcp, "collection_chunk", {"items": [1, 2], "size": 10})
         assert res == {"result": [[1, 2]]}
 
     def test_chunk_size_one(self):
-        res = _call(
-            self.mcp, "collection_chunk", {"items": [1, 2, 3], "size": 1}
-        )
+        res = _call(self.mcp, "collection_chunk", {"items": [1, 2, 3], "size": 1})
         assert res == {"result": [[1], [2], [3]]}
 
     def test_chunk_empty(self):
@@ -386,13 +357,9 @@ class TestCollectionChunk:
         assert "error" in res
 
     def test_chunk_negative_size_error(self):
-        res = _call(
-            self.mcp, "collection_chunk", {"items": [1, 2, 3], "size": -1}
-        )
+        res = _call(self.mcp, "collection_chunk", {"items": [1, 2, 3], "size": -1})
         assert "error" in res
 
     def test_chunk_size_equals_length(self):
-        res = _call(
-            self.mcp, "collection_chunk", {"items": [1, 2, 3], "size": 3}
-        )
+        res = _call(self.mcp, "collection_chunk", {"items": [1, 2, 3], "size": 3})
         assert res == {"result": [[1, 2, 3]]}

@@ -29,6 +29,7 @@ def _call_raw(mcp, name, args):
 
 # ---------- echo ----------
 
+
 class TestEcho:
     def test_simple_message(self):
         mcp = _make_server()
@@ -40,7 +41,7 @@ class TestEcho:
 
     def test_special_characters(self):
         mcp = _make_server()
-        msg = 'quotes "and" \'single\' <html> & symbols!'
+        msg = "quotes \"and\" 'single' <html> & symbols!"
         assert _call(mcp, "echo", {"message": msg}) == {"result": msg}
 
     def test_unicode(self):
@@ -66,6 +67,7 @@ class TestEcho:
 
 # ---------- echo_error ----------
 
+
 class TestEchoError:
     def test_raises_tool_error(self):
         mcp = _make_server()
@@ -88,6 +90,7 @@ class TestEchoError:
 
 
 # ---------- echo_large ----------
+
 
 class TestEchoLarge:
     def test_1kb(self):
@@ -119,6 +122,7 @@ class TestEchoLarge:
 
 
 # ---------- echo_nested ----------
+
 
 class TestEchoNested:
     def test_depth_0(self):
@@ -157,6 +161,7 @@ class TestEchoNested:
 
 # ---------- echo_types ----------
 
+
 class TestEchoTypes:
     def test_all_types_present(self):
         mcp = _make_server()
@@ -189,6 +194,7 @@ class TestEchoTypes:
 
 # ---------- echo_empty ----------
 
+
 class TestEchoEmpty:
     def test_returns_empty_string(self):
         mcp = _make_server()
@@ -206,6 +212,7 @@ class TestEchoEmpty:
 
 
 # ---------- echo_multiple ----------
+
 
 class TestEchoMultiple:
     def test_single_message(self):
@@ -239,6 +246,7 @@ class TestEchoMultiple:
 
 
 # ---------- echo_schema ----------
+
 
 class TestEchoSchema:
     def test_all_param_types(self):

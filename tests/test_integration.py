@@ -77,7 +77,9 @@ class TestIntegration(unittest.TestCase):
         """Verify no duplicate tool names."""
         tools = asyncio.run(self.mcp.list_tools())
         names = [t.name for t in tools]
-        self.assertEqual(len(names), len(set(names)), f"Duplicate tool names found: {[n for n in names if names.count(n) > 1]}")
+        self.assertEqual(
+            len(names), len(set(names)), f"Duplicate tool names found: {[n for n in names if names.count(n) > 1]}"
+        )
 
 
 if __name__ == "__main__":

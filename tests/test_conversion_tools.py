@@ -23,6 +23,7 @@ def _call(mcp, name, args):
 
 # ---------- conversion_celsius_to_fahrenheit ----------
 
+
 class TestCelsiusToFahrenheit:
     def test_freezing_point(self):
         mcp = _make_server()
@@ -46,6 +47,7 @@ class TestCelsiusToFahrenheit:
 
 
 # ---------- conversion_fahrenheit_to_celsius ----------
+
 
 class TestFahrenheitToCelsius:
     def test_freezing_point(self):
@@ -72,6 +74,7 @@ class TestFahrenheitToCelsius:
 
 # ---------- conversion_km_to_miles ----------
 
+
 class TestKmToMiles:
     def test_one_km(self):
         mcp = _make_server()
@@ -93,6 +96,7 @@ class TestKmToMiles:
 
 # ---------- conversion_miles_to_km ----------
 
+
 class TestMilesToKm:
     def test_one_mile(self):
         mcp = _make_server()
@@ -112,6 +116,7 @@ class TestMilesToKm:
 
 
 # ---------- conversion_bytes_to_human ----------
+
 
 class TestBytesToHuman:
     def test_zero(self):
@@ -155,6 +160,7 @@ class TestBytesToHuman:
 
 # ---------- conversion_rgb_to_hex ----------
 
+
 class TestRgbToHex:
     def test_orange(self):
         mcp = _make_server()
@@ -185,24 +191,19 @@ class TestRgbToHex:
 
 # ---------- conversion_hex_to_rgb ----------
 
+
 class TestHexToRgb:
     def test_with_hash(self):
         mcp = _make_server()
-        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "#ff8000"}) == {
-            "result": {"r": 255, "g": 128, "b": 0}
-        }
+        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "#ff8000"}) == {"result": {"r": 255, "g": 128, "b": 0}}
 
     def test_without_hash(self):
         mcp = _make_server()
-        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "ff8000"}) == {
-            "result": {"r": 255, "g": 128, "b": 0}
-        }
+        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "ff8000"}) == {"result": {"r": 255, "g": 128, "b": 0}}
 
     def test_black(self):
         mcp = _make_server()
-        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "#000000"}) == {
-            "result": {"r": 0, "g": 0, "b": 0}
-        }
+        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "#000000"}) == {"result": {"r": 0, "g": 0, "b": 0}}
 
     def test_white(self):
         mcp = _make_server()
@@ -212,9 +213,7 @@ class TestHexToRgb:
 
     def test_uppercase(self):
         mcp = _make_server()
-        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "#FF8000"}) == {
-            "result": {"r": 255, "g": 128, "b": 0}
-        }
+        assert _call(mcp, "conversion_hex_to_rgb", {"hex_color": "#FF8000"}) == {"result": {"r": 255, "g": 128, "b": 0}}
 
     def test_invalid_format(self):
         mcp = _make_server()
@@ -228,6 +227,7 @@ class TestHexToRgb:
 
 
 # ---------- conversion_decimal_to_binary ----------
+
 
 class TestDecimalToBinary:
     def test_forty_two(self):

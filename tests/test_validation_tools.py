@@ -3,13 +3,13 @@
 import asyncio
 import json
 
-import pytest
 from mcp.server.fastmcp import FastMCP
 
 
 def _make_server():
     mcp = FastMCP(name="test")
     from mcp_test_server.tools.validation_tools import register
+
     register(mcp)
     return mcp
 
@@ -23,6 +23,7 @@ def _call(mcp, name, args):
 
 
 # ---------- validation_is_email ----------
+
 
 class TestIsEmail:
     def setup_method(self):
@@ -55,6 +56,7 @@ class TestIsEmail:
 
 # ---------- validation_is_url ----------
 
+
 class TestIsUrl:
     def setup_method(self):
         self.mcp = _make_server()
@@ -85,6 +87,7 @@ class TestIsUrl:
 
 
 # ---------- validation_is_ipv4 ----------
+
 
 class TestIsIpv4:
     def setup_method(self):
@@ -117,6 +120,7 @@ class TestIsIpv4:
 
 # ---------- validation_is_ipv6 ----------
 
+
 class TestIsIpv6:
     def setup_method(self):
         self.mcp = _make_server()
@@ -148,6 +152,7 @@ class TestIsIpv6:
 
 # ---------- validation_is_uuid ----------
 
+
 class TestIsUuid:
     def setup_method(self):
         self.mcp = _make_server()
@@ -174,6 +179,7 @@ class TestIsUuid:
 
 
 # ---------- validation_is_json ----------
+
 
 class TestIsJson:
     def setup_method(self):
@@ -214,6 +220,7 @@ class TestIsJson:
 
 # ---------- validation_is_palindrome ----------
 
+
 class TestIsPalindrome:
     def setup_method(self):
         self.mcp = _make_server()
@@ -244,6 +251,7 @@ class TestIsPalindrome:
 
 
 # ---------- validation_matches_regex ----------
+
 
 class TestMatchesRegex:
     def setup_method(self):

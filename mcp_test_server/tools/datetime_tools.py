@@ -21,14 +21,18 @@ def register(mcp):
         """Parse an ISO date string and return its components {year, month, day, hour, minute, second}."""
         try:
             dt = _parse_date(date_string)
-            return json.dumps({"result": {
-                "year": dt.year,
-                "month": dt.month,
-                "day": dt.day,
-                "hour": dt.hour,
-                "minute": dt.minute,
-                "second": dt.second,
-            }})
+            return json.dumps(
+                {
+                    "result": {
+                        "year": dt.year,
+                        "month": dt.month,
+                        "day": dt.day,
+                        "hour": dt.hour,
+                        "minute": dt.minute,
+                        "second": dt.second,
+                    }
+                }
+            )
         except ValueError as e:
             return json.dumps({"error": str(e)})
 
