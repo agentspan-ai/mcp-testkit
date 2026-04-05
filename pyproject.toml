@@ -29,7 +29,7 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/agentspan-dev/mcp-test-server"
+Repository = "https://github.com/agentspan-ai/mcp-testkit"
 
 [project.scripts]
 mcp-testkit = "mcp_test_server.server:main"

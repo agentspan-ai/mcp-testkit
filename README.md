@@ -11,8 +11,8 @@ pip install mcp-testkit
 Or from source:
 
 ```bash
-git clone https://github.com/agentspan-dev/mcp-test-server.git
-cd mcp-test-server
+git clone https://github.com/agentspan-ai/mcp-testkit.git
+cd mcp-testkit
 pip install -e .
 ```
 
