@@ -207,7 +207,7 @@ python3 -m pytest tests/ -v
 ## Project Structure
 
 ```
-mcp-test-server/
+mcp-testkit/
 ├── pyproject.toml              # Package config, deps, CLI entry point
 ├── mcp_test_server/
 │   ├── __init__.py             # Package version
