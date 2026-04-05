@@ -6,7 +6,7 @@ import unittest
 
 from mcp.server.fastmcp import FastMCP
 
-from tools import register_all
+from mcp_test_server.tools import register_all
 
 
 def _make_server():

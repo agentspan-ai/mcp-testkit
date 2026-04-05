@@ -9,7 +9,7 @@ from mcp.server.fastmcp import FastMCP
 
 def _make_server():
     mcp = FastMCP(name="test")
-    from tools.collection_tools import register
+    from mcp_test_server.tools.collection_tools import register
 
     register(mcp)
     return mcp

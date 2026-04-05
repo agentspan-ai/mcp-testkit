@@ -2,22 +2,34 @@
 
 A Python MCP server with **65 deterministic tools** across 8 groups, supporting **stdio**, **SSE**, and **REST API** transports. Built for consistent, repeatable MCP protocol testing.
 
+## Install
+
+```bash
+pip install mcp-test-server
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/agentspan-dev/mcp-test-server.git
+cd mcp-test-server
+pip install -e .
+```
+
 ## Quick Start
 
 ```bash
-pip install -r requirements.txt
-
 # stdio (default)
-python3 server.py
+mcp-test-server
 
 # SSE + REST API on port 3001
-python3 server.py --transport sse
+mcp-test-server --transport sse
 
 # With bearer token authentication
-python3 server.py --transport sse --auth super_secret_key
+mcp-test-server --transport sse --auth super_secret_key
 
 # Custom host/port
-python3 server.py --transport sse --host 0.0.0.0 --port 8080
+mcp-test-server --transport sse --host 0.0.0.0 --port 8080
 ```
 
 ## Transports
@@ -196,19 +208,21 @@ python3 -m pytest tests/ -v
 
 ```
 mcp-test-server/
-├── server.py          # Entry point — MCP server + REST API + auth
-├── api.py             # REST API routes + OpenAPI spec generation
-├── requirements.txt   # mcp[cli], requests
-├── tools/
-│   ├── __init__.py         # Tool group registry
-│   ├── math_tools.py
-│   ├── string_tools.py
-│   ├── collection_tools.py
-│   ├── encoding_tools.py
-│   ├── datetime_tools.py
-│   ├── validation_tools.py
-│   ├── conversion_tools.py
-│   └── echo_tools.py       # Includes get_weather
+├── pyproject.toml              # Package config, deps, CLI entry point
+├── mcp_test_server/
+│   ├── __init__.py             # Package version
+│   ├── server.py               # Entry point — MCP server + REST API + auth
+│   ├── api.py                  # REST API routes + OpenAPI spec generation
+│   └── tools/
+│       ├── __init__.py         # Tool group registry
+│       ├── math_tools.py
+│       ├── string_tools.py
+│       ├── collection_tools.py
+│       ├── encoding_tools.py
+│       ├── datetime_tools.py
+│       ├── validation_tools.py
+│       ├── conversion_tools.py
+│       └── echo_tools.py      # Includes get_weather
 └── tests/
     ├── test_math_tools.py
     ├── test_string_tools.py

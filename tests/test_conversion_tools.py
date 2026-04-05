@@ -5,7 +5,7 @@ import json
 
 from mcp.server.fastmcp import FastMCP
 
-from tools.conversion_tools import register
+from mcp_test_server.tools.conversion_tools import register
 
 
 def _make_server():

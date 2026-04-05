@@ -21,8 +21,8 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt pytest
+      - name: Install package
+        run: pip install -e ".[dev]" 2>/dev/null || pip install -e . && pip install pytest
 
       - name: Run tests
         run: python -m pytest tests/ -v --tb=short
@@ -37,8 +37,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt ruff
+      - name: Install
+        run: pip install -e . ruff
 
       - name: Check formatting
         run: ruff format --check .
@@ -57,15 +57,15 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt pytest
+      - name: Install package
+        run: pip install -e . pytest
 
-      - name: Verify server starts (stdio)
-        run: python server.py --help
+      - name: Verify CLI entry point
+        run: mcp-test-server --help
 
       - name: Verify SSE server starts and responds
         run: |
-          python server.py --transport sse --port 3001 &
+          mcp-test-server --transport sse --port 3001 &
           sleep 3
           curl -sf http://127.0.0.1:3001/api-docs | python -c "import sys,json; d=json.load(sys.stdin); assert d['openapi']=='3.0.3'; assert len(d['paths'])==65"
           curl -sf "http://127.0.0.1:3001/api/math/add?a=2&b=3" | python -c "import sys,json; d=json.load(sys.stdin); assert d['result']==5.0"
@@ -74,9 +74,38 @@ jobs:
 
       - name: Verify auth mode
         run: |
-          python server.py --transport sse --port 3002 --auth testkey &
+          mcp-test-server --transport sse --port 3002 --auth testkey &
           sleep 3
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3002/api/math/add?a=1\&b=2)
           [ "$STATUS" = "401" ] || (echo "Expected 401, got $STATUS" && exit 1)
           curl -sf -H "Authorization: Bearer testkey" "http://127.0.0.1:3002/api/math/add?a=1&b=2" | python -c "import sys,json; d=json.load(sys.stdin); assert d['result']==3.0"
           kill %1
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, lint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Verify wheel contents
+        run: |
+          pip install dist/*.whl
+          mcp-test-server --help
+          python -c "from mcp_test_server import __version__; print(f'Version: {__version__}')"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

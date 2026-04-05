@@ -7,7 +7,7 @@ from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 from mcp.types import TextContent
 
-from tools.echo_tools import register
+from mcp_test_server.tools.echo_tools import register
 
 
 def _make_server():

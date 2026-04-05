@@ -9,9 +9,10 @@ This is an MCP test server with 65 deterministic tools across 8 groups, exposed 
 ## Architecture
 
 ```
-server.py        → Entry point. Creates FastMCP instance, registers tools, starts transport.
-api.py           → REST API. Data-driven endpoint registry generates Starlette routes + OpenAPI spec.
-tools/*.py       → Tool modules. Each exports register(mcp) that decorates tools with @mcp.tool().
+mcp_test_server/
+  server.py      → Entry point. Creates FastMCP instance, registers tools, starts transport.
+  api.py         → REST API. Data-driven endpoint registry generates Starlette routes + OpenAPI spec.
+  tools/*.py     → Tool modules. Each exports register(mcp) that decorates tools with @mcp.tool().
 tests/*.py       → Unit + integration tests using unittest + FastMCP's call_tool().
 ```
 
@@ -23,16 +24,16 @@ tests/*.py       → Unit + integration tests using unittest + FastMCP's call_to
 
 | Group | File | When to use |
 |-------|------|-------------|
-| math | `tools/math_tools.py` | Numeric computation |
-| string | `tools/string_tools.py` | String manipulation |
-| collection | `tools/collection_tools.py` | Array/dict operations |
-| encoding | `tools/encoding_tools.py` | Encode/decode/hash |
-| datetime | `tools/datetime_tools.py` | Date computations (no current time!) |
-| validation | `tools/validation_tools.py` | Input checking (returns `{valid, reason}`) |
-| conversion | `tools/conversion_tools.py` | Unit/format conversions |
-| echo | `tools/echo_tools.py` | Protocol testing, fixtures, misc |
+| math | `mcp_test_server/tools/math_tools.py` | Numeric computation |
+| string | `mcp_test_server/tools/string_tools.py` | String manipulation |
+| collection | `mcp_test_server/tools/collection_tools.py` | Array/dict operations |
+| encoding | `mcp_test_server/tools/encoding_tools.py` | Encode/decode/hash |
+| datetime | `mcp_test_server/tools/datetime_tools.py` | Date computations (no current time!) |
+| validation | `mcp_test_server/tools/validation_tools.py` | Input checking (returns `{valid, reason}`) |
+| conversion | `mcp_test_server/tools/conversion_tools.py` | Unit/format conversions |
+| echo | `mcp_test_server/tools/echo_tools.py` | Protocol testing, fixtures, misc |
 
-If a tool doesn't fit any group, add it to `echo_tools.py` (the catch-all for test fixtures).
+If a tool doesn't fit any group, add it to `mcp_test_server/tools/echo_tools.py` (the catch-all for test fixtures).
 
 ### 2. Implement the tool
 
@@ -57,7 +58,7 @@ Rules:
 
 ### 3. Add the REST API endpoint
 
-In `api.py`, add an entry to the `ENDPOINTS` list:
+In `mcp_test_server/api.py`, add an entry to the `ENDPOINTS` list:
 
 ```python
 # For GET (simple scalar params):
@@ -111,9 +112,9 @@ All tests must pass. Current count: 389 tests.
 
 ## How to Add a New Tool Group
 
-1. Create `tools/new_group_tools.py` with a `register(mcp)` function
-2. Import it in `tools/__init__.py` and add to `ALL_GROUPS`
-3. Add REST endpoints in `api.py` `ENDPOINTS` list
+1. Create `mcp_test_server/tools/new_group_tools.py` with a `register(mcp)` function
+2. Import it in `mcp_test_server/tools/__init__.py` and add to `ALL_GROUPS`
+3. Add REST endpoints in `mcp_test_server/api.py` `ENDPOINTS` list
 4. Create `tests/test_new_group_tools.py`
 5. Update `tests/test_integration.py` tool counts and prefix checks
 
@@ -129,13 +130,13 @@ All tests must pass. Current count: 389 tests.
 
 ```bash
 # stdio (for MCP client testing)
-python3 server.py
+mcp-test-server
 
 # SSE + REST API
-python3 server.py --transport sse
+mcp-test-server --transport sse
 
 # With auth
-python3 server.py --transport sse --auth <key>
+mcp-test-server --transport sse --auth <key>
 ```
 
 Default SSE port is 3001. Override with `--port`.

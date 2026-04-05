@@ -1,6 +1,6 @@
 """Tool group registry for MCP test server."""
 
-from tools import (
+from mcp_test_server.tools import (
     math_tools,
     string_tools,
     collection_tools,

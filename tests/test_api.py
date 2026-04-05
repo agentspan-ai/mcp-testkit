@@ -6,8 +6,8 @@ import unittest
 from starlette.testclient import TestClient
 from starlette.applications import Starlette
 
-from api import create_api_routes, _get_openapi_spec, ENDPOINTS
-from server import mcp, BearerAuthMiddleware
+from mcp_test_server.api import create_api_routes, _get_openapi_spec, ENDPOINTS
+from mcp_test_server.server import mcp, BearerAuthMiddleware
 
 
 def _make_app(auth_key=None):

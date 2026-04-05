@@ -6,7 +6,7 @@ import math
 
 from mcp.server.fastmcp import FastMCP
 
-from tools.math_tools import register
+from mcp_test_server.tools.math_tools import register
 
 
 def _make_server():

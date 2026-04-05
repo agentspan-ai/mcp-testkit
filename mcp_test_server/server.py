@@ -9,8 +9,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from api import create_api_routes
-from tools import register_all
+from mcp_test_server.api import create_api_routes
+from mcp_test_server.tools import register_all
 
 mcp = FastMCP(
     name="mcp-test-server",
