@@ -37,7 +37,7 @@ mcp-testkit --transport sse --host 0.0.0.0 --port 8080
 | Transport | Command | Endpoints |
 |-----------|---------|-----------|
 | **stdio** | `mcp-testkit` | MCP JSON-RPC over stdin/stdout |
-| **SSE** | `mcp-testkit --transport sse` | MCP at `/sse` + REST at `/api/*` + OpenAPI at `/api-docs` |
+| **SSE** | `mcp-testkit --transport sse` | MCP at `/mcp` + REST at `/api/*` + OpenAPI at `/api-docs` |
 
 ## Authentication
 
