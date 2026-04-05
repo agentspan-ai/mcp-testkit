@@ -1,0 +1,29 @@
+"""Tool group registry for MCP test server."""
+
+from tools import (
+    math_tools,
+    string_tools,
+    collection_tools,
+    encoding_tools,
+    datetime_tools,
+    validation_tools,
+    conversion_tools,
+    echo_tools,
+)
+
+ALL_GROUPS = [
+    math_tools,
+    string_tools,
+    collection_tools,
+    encoding_tools,
+    datetime_tools,
+    validation_tools,
+    conversion_tools,
+    echo_tools,
+]
+
+
+def register_all(mcp):
+    """Register all tool groups with the MCP server."""
+    for group in ALL_GROUPS:
+        group.register(mcp)
