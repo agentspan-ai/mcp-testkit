@@ -50,7 +50,7 @@ def _start_server(port, auth_key=None):
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        preexec_fn=os.setsid,
+        start_new_session=True,
     )
     return proc
 

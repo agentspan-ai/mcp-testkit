@@ -2,11 +2,11 @@
 
 import unittest
 
-from starlette.testclient import TestClient
 from starlette.applications import Starlette
+from starlette.testclient import TestClient
 
-from mcp_test_server.api import create_api_routes, _get_openapi_spec, ENDPOINTS
-from mcp_test_server.server import mcp, BearerAuthMiddleware
+from mcp_test_server.api import ENDPOINTS, _get_openapi_spec, create_api_routes
+from mcp_test_server.server import BearerAuthMiddleware, mcp
 
 
 def _make_app(auth_key=None):

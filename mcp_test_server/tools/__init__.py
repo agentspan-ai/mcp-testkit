@@ -1,14 +1,14 @@
 """Tool group registry for MCP test server."""
 
 from mcp_test_server.tools import (
+    collection_tools,
+    conversion_tools,
+    datetime_tools,
+    echo_tools,
+    encoding_tools,
     math_tools,
     string_tools,
-    collection_tools,
-    encoding_tools,
-    datetime_tools,
     validation_tools,
-    conversion_tools,
-    echo_tools,
 )
 
 ALL_GROUPS = [

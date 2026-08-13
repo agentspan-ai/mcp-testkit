@@ -62,16 +62,26 @@ In `mcp_test_server/api.py`, add an entry to the `ENDPOINTS` list:
 
 ```python
 # For GET (simple scalar params):
-("/api/group/my-tool", "GET", "my_new_tool",
- "Description for OpenAPI",
- [("param", "string", True, "Param description"),
-  ("count", "integer", True, "Count description")]),
+(
+    (
+        "/api/group/my-tool",
+        "GET",
+        "my_new_tool",
+        "Description for OpenAPI",
+        [("param", "string", True, "Param description"), ("count", "integer", True, "Count description")],
+    ),
+)
 
 # For POST (complex or text-heavy params):
-("/api/group/my-tool", "POST", "my_new_tool",
- "Description for OpenAPI",
- [("param", "string", True, "Param description"),
-  ("count", "integer", True, "Count description")]),
+(
+    (
+        "/api/group/my-tool",
+        "POST",
+        "my_new_tool",
+        "Description for OpenAPI",
+        [("param", "string", True, "Param description"), ("count", "integer", True, "Count description")],
+    ),
+)
 ```
 
 The tuple format is: `(path, method, tool_name, summary, params)` where params is `[(name, json_schema_type, required, description), ...]`.
