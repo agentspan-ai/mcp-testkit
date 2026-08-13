@@ -10,7 +10,6 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-
 # ---------------------------------------------------------------------------
 # Endpoint registry — single source of truth for routes + OpenAPI generation
 # ---------------------------------------------------------------------------

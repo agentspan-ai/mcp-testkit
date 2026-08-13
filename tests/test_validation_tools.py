@@ -17,7 +17,7 @@ def _make_server():
 def _call(mcp, name, args):
     result = asyncio.run(mcp.call_tool(name, args))
     # call_tool returns (list[TextContent], meta); we need the first content item
-    content = result[0] if isinstance(result, list) else result[0]
+    content = result[0]
     text = content[0].text if isinstance(content, list) else content.text
     return json.loads(text)
 

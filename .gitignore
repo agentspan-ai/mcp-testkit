@@ -5,3 +5,4 @@ dist/
 build/
 .venv/
 docs/superpowers/
+.idea/
