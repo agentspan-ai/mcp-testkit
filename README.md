@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **Final release.** Maintained releases of mcp-testkit ended with the Agentspan → [Orkes Conductor](https://github.com/conductor-oss/conductor) merge (August 17, 2026). This repository is archived read-only; `pip install mcp-testkit` keeps working and the server remains a usable generic MCP test harness as-is.
+
 # MCP Test Server
 
 A Python MCP server with **65 deterministic tools** across 8 groups, supporting **stdio**, **HTTP**, and **REST API** transports. Built for consistent, repeatable MCP protocol testing.
