@@ -4,16 +4,26 @@ Instructions for AI agents contributing to this project.
 
 ## Project Overview
 
-This is an MCP test server with 65 deterministic tools across 8 groups, exposed via MCP (stdio/HTTP) and REST API. Every tool returns identical output for identical input — no randomness, no `datetime.now()`, no external state.
+This is an MCP test server with deterministic tools in groups, exposed via MCP (stdio/HTTP) and REST API. Every tool returns identical output for identical input — no randomness, no `datetime.now()`, no external state. The one exception is the task store of the MCP Tasks extension in `task_tools.py` (task IDs, poll counts, and expiry on the monotonic clock, which never appears in a response); keep that state there.
+
+## Design principles
+
+mcp-testkit is a test utility. It supports tests of MCP clients; it is not a production server. Keep it:
+
+- **Simple:** write the smallest code that does the job. Do not add features, options or safeguards for uses outside testing.
+- **Predictable:** the same input gives the same output. Every limit has a documented default that fits normal tests.
+- **Actionable:** when a request goes over a limit, return a clear error that names the limit and the option that changes it. The test or its client decides what to do next.
+
+A user who needs more than a default changes the option. The server does not guard against misuse of its options.
 
 ## Architecture
 
 ```
 mcp_test_server/
-  server.py      → Entry point. Creates FastMCP instance, registers tools, starts transport.
+  server.py      → Entry point. Creates MCPServer instance, registers tools, starts transport.
   api.py         → REST API. Data-driven endpoint registry generates Starlette routes + OpenAPI spec.
   tools/*.py     → Tool modules. Each exports register(mcp) that decorates tools with @mcp.tool().
-tests/*.py       → Unit + integration tests using unittest + FastMCP's call_tool().
+tests/*.py       → Unit + integration tests using unittest + MCPServer's call_tool().
 ```
 
 **Key pattern:** Tools are registered as closures inside `register(mcp)` via `@mcp.tool()` decorators. Helper functions live at module level.
@@ -32,6 +42,7 @@ tests/*.py       → Unit + integration tests using unittest + FastMCP's call_to
 | validation | `mcp_test_server/tools/validation_tools.py` | Input checking (returns `{valid, reason}`) |
 | conversion | `mcp_test_server/tools/conversion_tools.py` | Unit/format conversions |
 | echo | `mcp_test_server/tools/echo_tools.py` | Protocol testing, fixtures, misc |
+| task | `mcp_test_server/tools/task_tools.py` | MCP Tasks extension (`tasks/get`, `tasks/cancel`, `tasks/update`); `TasksExtension` is passed to `MCPServer(extensions=...)` in `server.py` |
 
 If a tool doesn't fit any group, add it to `mcp_test_server/tools/echo_tools.py` (the catch-all for test fixtures).
 
@@ -52,8 +63,8 @@ Rules:
 - **Return error objects** via `json.dumps({"error": "message"})` for expected errors
 - **Raise `ToolError`** only for tools that intentionally test error handling
 - **Be deterministic** — no randomness, no current time, no network calls, no file I/O
-- **Use stdlib only** — no imports beyond Python stdlib + `mcp` + `requests`
-- **Type-annotate all parameters** — FastMCP uses these to generate JSON schemas
+- **Use stdlib only** — no imports beyond Python stdlib + `mcp` + `requests`, and the libraries that `mcp` itself depends on (for example `pydantic` and `starlette`). Do not add a dependency to `pyproject.toml`
+- **Type-annotate all parameters** — MCPServer uses these to generate JSON schemas
 - Validation tools return `json.dumps({"valid": bool, "reason": str})`
 
 ### 3. Add the REST API endpoint
@@ -108,17 +119,13 @@ def test_my_new_tool(self):
     self.assertEqual(r.json(), {"result": "abcabcabc"})
 ```
 
-### 5. Update integration test
-
-In `tests/test_integration.py`, update the expected tool count in `test_all_65_tools_registered` and adjust group counts if applicable.
-
-### 6. Verify
+### 5. Verify
 
 ```bash
 python3 -m pytest tests/ -v
 ```
 
-All tests must pass. Current count: 389 tests.
+All tests must pass. `tests/test_integration.py` checks that every tool has a REST endpoint, so steps 2 and 3 go together.
 
 ## How to Add a New Tool Group
 
@@ -126,7 +133,7 @@ All tests must pass. Current count: 389 tests.
 2. Import it in `mcp_test_server/tools/__init__.py` and add to `ALL_GROUPS`
 3. Add REST endpoints in `mcp_test_server/api.py` `ENDPOINTS` list
 4. Create `tests/test_new_group_tools.py`
-5. Update `tests/test_integration.py` tool counts and prefix checks
+5. Add the group prefix to `GROUP_PREFIXES` in `tests/test_integration.py`
 
 ## Conventions
 

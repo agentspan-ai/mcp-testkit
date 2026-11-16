@@ -4,21 +4,20 @@ import asyncio
 import json
 import math
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from mcp_test_server.tools.math_tools import register
 
 
 def _make_server():
-    mcp = FastMCP(name="test")
+    mcp = MCPServer(name="test")
     register(mcp)
     return mcp
 
 
 def _call(mcp, name, args):
     result = asyncio.run(mcp.call_tool(name, args))
-    # call_tool returns (list[Content], raw_result); we need list[Content][0].text
-    content_list = result[0] if isinstance(result, tuple) else result
+    content_list = result.content
     return json.loads(content_list[0].text)
 
 

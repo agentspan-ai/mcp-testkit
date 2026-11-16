@@ -1,12 +1,17 @@
 """Tests for the HTTP REST API endpoints."""
 
+import contextlib
+import io
+import json
+import sys
 import unittest
+from unittest import mock
 
 from starlette.applications import Starlette
 from starlette.testclient import TestClient
 
 from mcp_test_server.api import ENDPOINTS, _get_openapi_spec, create_api_routes
-from mcp_test_server.server import BearerAuthMiddleware, mcp
+from mcp_test_server.server import BearerAuthMiddleware, _build_http_app, _parse_args, main, mcp, tasks_extension
 
 
 def _make_app(auth_key=None):
@@ -153,6 +158,27 @@ class TestAPIEndpoints(unittest.TestCase):
         r = self.client.post("/api/echo/schema", json=body)
         self.assertEqual(r.json(), body)
 
+    # --- Task (POST, synchronous) ---
+    def test_task_run(self):
+        r = self.client.post("/api/task/run", json={"tool": "math_add", "arguments": {"a": 2, "b": 3}})
+        self.assertEqual(r.json(), {"result": 5.0})
+
+    def test_task_run_unknown_tool(self):
+        r = self.client.post("/api/task/run", json={"tool": "no_such_tool"})
+        self.assertIn("error", r.json())
+
+    def test_task_run_nested_tool_error(self):
+        r = self.client.post("/api/task/run", json={"tool": "echo_error", "arguments": {"message": "x"}})
+        self.assertEqual(r.json(), {"error": "Error executing tool echo_error: Intentional error: x"})
+
+    def test_task_scripted_completed(self):
+        r = self.client.post("/api/task/scripted", json={"outcome": "completed", "message": "done"})
+        self.assertEqual(r.json(), {"result": "done"})
+
+    def test_task_scripted_failed(self):
+        r = self.client.post("/api/task/scripted", json={"outcome": "failed", "message": "boom"})
+        self.assertIn("boom", r.json()["error"])
+
     # --- Weather (GET) ---
     def test_weather(self):
         r = self.client.get("/api/weather", params={"city": "San Francisco"})
@@ -203,6 +229,86 @@ class TestAPIAuth(unittest.TestCase):
         self.assertEqual(r.json()["openapi"], "3.0.3")
 
 
+def _string_length_call(size):
+    body = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "tools/call",
+        "params": {"name": "string_length", "arguments": {"text": "x" * size}},
+    }
+    return json.dumps(body)
+
+
+class TestTaskOptions(unittest.TestCase):
+    """--max-tasks, --max-task-result-bytes and --task-ttl-ms configure the task store."""
+
+    def test_defaults(self):
+        args = _parse_args([])
+        self.assertEqual(
+            (args.max_tasks, args.max_task_result_bytes, args.task_ttl_ms), (1000, 10 * 1024 * 1024, 3_600_000)
+        )
+
+    def test_options_set_the_values(self):
+        args = _parse_args(["--max-tasks", "5", "--max-task-result-bytes", "2048", "--task-ttl-ms", "60000"])
+        self.assertEqual((args.max_tasks, args.max_task_result_bytes, args.task_ttl_ms), (5, 2048, 60000))
+
+    def test_options_reject_invalid_values(self):
+        for option in ("--max-tasks", "--max-task-result-bytes", "--task-ttl-ms"):
+            for value in ("0", "-1", "abc"):
+                stderr = io.StringIO()
+                with self.subTest(option=option, value=value), contextlib.redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit):
+                        _parse_args([option, value])
+                    self.assertIn(f"{option}: must be a positive integer, got '{value}'", stderr.getvalue())
+
+    def test_main_configures_the_task_store(self):
+        argv = ["mcp-testkit", "--max-tasks", "7", "--max-task-result-bytes", "4096", "--task-ttl-ms", "9000"]
+        with (
+            mock.patch.object(sys, "argv", argv),
+            mock.patch.object(mcp, "run"),
+            mock.patch.object(tasks_extension, "configure") as configure,
+        ):
+            main()
+        configure.assert_called_once_with(max_tasks=7, max_result_bytes=4096, ttl_ms=9000)
+
+
+class TestRequestBodyLimit(unittest.TestCase):
+    """/mcp keeps the SDK's 4 MiB body limit (GHSA-fmmv-w9g8-j3gc) unless --max-request-body-size raises it."""
+
+    HEADERS = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
+
+    def post(self, max_request_body_size, size):
+        kwargs = {} if max_request_body_size is None else {"max_request_body_size": max_request_body_size}
+        app = _build_http_app(**kwargs)
+        with TestClient(app, base_url="http://127.0.0.1:3001") as client:
+            return client.post("/mcp", content=_string_length_call(size), headers=self.HEADERS)
+
+    def test_default_option_is_the_sdk_default(self):
+        self.assertEqual(_parse_args([]).max_request_body_size, 4 * 1024 * 1024)
+
+    def test_option_sets_the_limit(self):
+        self.assertEqual(_parse_args(["--max-request-body-size", "104857600"]).max_request_body_size, 104857600)
+
+    def test_option_rejects_invalid_values(self):
+        for value in ("0", "-1", "abc"):
+            with self.subTest(value=value), contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit):
+                    _parse_args(["--max-request-body-size", value])
+
+    def test_default_limit_rejects_a_5_mb_request(self):
+        r = self.post(None, 5_000_000)
+        self.assertEqual(r.status_code, 413)
+
+    def test_raised_limit_accepts_a_5_mb_request(self):
+        r = self.post(8 * 1024 * 1024, 5_000_000)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn('{\\"result\\": 5000000}', r.text)
+
+    def test_small_limit_still_serves_small_requests(self):
+        self.assertEqual(self.post(1000, 10).status_code, 200)
+        self.assertEqual(self.post(1000, 2000).status_code, 413)
+
+
 class TestOpenAPISpec(unittest.TestCase):
     def setUp(self):
         self.spec = _get_openapi_spec()
@@ -210,9 +316,9 @@ class TestOpenAPISpec(unittest.TestCase):
     def test_spec_version(self):
         self.assertEqual(self.spec["openapi"], "3.0.3")
 
-    def test_spec_has_65_paths(self):
-        # 65 tool endpoints + /api-docs is not in the spec (it's a meta-endpoint)
-        self.assertEqual(len(self.spec["paths"]), 65)
+    def test_spec_paths_match_endpoints(self):
+        # /api-docs is a meta-endpoint and is not in the spec.
+        self.assertEqual(set(self.spec["paths"]), {path for path, *_ in ENDPOINTS})
 
     def test_all_endpoints_in_spec(self):
         for path, _method, _tool, _summary, _params in ENDPOINTS:

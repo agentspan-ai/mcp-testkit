@@ -1,15 +1,20 @@
-> [!IMPORTANT]
-> **Final release.** Maintained releases of mcp-testkit ended with the Agentspan → [Orkes Conductor](https://github.com/conductor-oss/conductor) merge (August 17, 2026). This repository is archived read-only; `pip install mcp-testkit` keeps working and the server remains a usable generic MCP test harness as-is.
-
 # MCP Test Server
 
-A Python MCP server with **65 deterministic tools** across 8 groups, supporting **stdio**, **HTTP**, and **REST API** transports. Built for consistent, repeatable MCP protocol testing.
+A Python MCP server with **deterministic tools** in groups, supporting **stdio**, **HTTP**, and **REST API** transports. Built for consistent, repeatable MCP protocol testing.
+
+It is a test utility, not a production server: simple, predictable, and with clear errors that name the limit you hit and the option that changes it.
 
 ## Install
 
+mcp-testkit is a command-line server, so install it in its own environment:
+
 ```bash
-pip install mcp-testkit
+pipx install mcp-testkit
+# or
+uv tool install mcp-testkit
 ```
+
+`pip install mcp-testkit` also works. It needs `mcp` 2.3.0 or later, so it cannot share an environment with a package that needs `mcp` 1.x. Your MCP client does not need to share an environment with the server: they talk only over stdio or HTTP.
 
 Or from source:
 
@@ -25,7 +30,7 @@ pip install -e .
 # stdio (default)
 mcp-testkit
 
-# SSE + REST API on port 3001
+# Streamable HTTP (/mcp) + REST API on port 3001
 mcp-testkit --transport http
 
 # With bearer token authentication
@@ -44,7 +49,7 @@ mcp-testkit --transport http --host 0.0.0.0 --port 8080
 
 ## Authentication
 
-Pass `--auth <key>` to require a Bearer token on all requests (both MCP SSE and REST):
+Pass `--auth <key>` to require a Bearer token on all requests (both MCP at `/mcp` and REST):
 
 ```bash
 mcp-testkit --transport http --auth my_secret
@@ -53,11 +58,48 @@ mcp-testkit --transport http --auth my_secret
 # Authorization: Bearer my_secret
 ```
 
-## Tools (65 total)
+## Request size limit
 
-All tools are **deterministic** — same input always produces same output. No randomness, no current time, no external state.
+`/mcp` rejects request bodies over **4 MiB** with HTTP `413`. This is the MCP SDK default, added as a security fix ([GHSA-fmmv-w9g8-j3gc](https://github.com/modelcontextprotocol/python-sdk/security/advisories/GHSA-fmmv-w9g8-j3gc)): without a limit, the server read whole request bodies into memory, so one large request could exhaust it.
 
-### Math (8 tools)
+To test larger requests, raise it:
+
+```bash
+mcp-testkit --transport http --max-request-body-size 104857600   # 100 MiB
+```
+
+Keep the default on a server that clients you do not trust can reach, especially without `--auth`. Responses (for example `echo_large`) and the REST API at `/api/*` are not limited by this setting.
+
+## Task limits
+
+The [MCP Tasks](#mcp-tasks-extension) store has three options:
+
+| Option | Default | What it does |
+|--------|---------|--------------|
+| `--max-tasks N` | `1000` | Most tasks kept at once. When the store is full, a new task is refused. |
+| `--max-task-result-bytes BYTES` | `10485760` (10 MiB) | Largest result one task keeps, as JSON. A larger result makes the task fail. |
+| `--task-ttl-ms MS` | `3600000` (1 hour) | How long a task stays readable after it is created. It is also the `ttlMs` that clients get. |
+
+```bash
+mcp-testkit --transport http --max-tasks 5000 --task-ttl-ms 600000
+```
+
+The server keeps tasks in memory, so large values use more memory.
+
+## Host and Origin checks
+
+`/mcp` checks the `Host` and `Origin` headers against `--host`, to protect against DNS rebinding (an MCP SDK feature):
+
+- With the default `--host 127.0.0.1` (or `localhost` or `::1`), `/mcp` accepts only `Host: 127.0.0.1:*`, `localhost:*` or `[::1]:*`. Any other `Host` gets HTTP `421`, and a browser `Origin` from another site gets `403`.
+- With any other `--host`, for example `0.0.0.0`, `/mcp` does not check these headers.
+
+To reach the server by another name (for example from a Docker container through `host.docker.internal`), start it with `--host 0.0.0.0`. The REST API at `/api/*` does not check these headers.
+
+## Tools
+
+All tools are **deterministic** — same input always produces same output. No randomness, no current time, no external state. The one exception is the task store behind the [MCP Tasks](#mcp-tasks-extension) tools.
+
+### Math
 
 | Tool | Params | Description |
 |------|--------|-------------|
@@ -70,7 +112,7 @@ All tools are **deterministic** — same input always produces same output. No r
 | `math_factorial` | `n` | n! (errors on negative) |
 | `math_fibonacci` | `n` | Nth Fibonacci number (0-indexed) |
 
-### String (8 tools)
+### String
 
 | Tool | Params | Description |
 |------|--------|-------------|
@@ -83,7 +125,7 @@ All tools are **deterministic** — same input always produces same output. No r
 | `string_split` | `text`, `delimiter` | Split by delimiter |
 | `string_join` | `items`, `delimiter` | Join list with delimiter |
 
-### Collection (8 tools)
+### Collection
 
 | Tool | Params | Description |
 |------|--------|-------------|
@@ -96,7 +138,7 @@ All tools are **deterministic** — same input always produces same output. No r
 | `collection_zip` | `list_a`, `list_b` | Zip into list of pairs |
 | `collection_chunk` | `items`, `size` | Split into chunks |
 
-### Encoding (8 tools)
+### Encoding
 
 | Tool | Params | Description |
 |------|--------|-------------|
@@ -109,7 +151,7 @@ All tools are **deterministic** — same input always produces same output. No r
 | `encoding_md5` | `text` | MD5 hash |
 | `encoding_sha256` | `text` | SHA-256 hash |
 
-### DateTime (8 tools)
+### DateTime
 
 All operate on provided dates — never use current time.
 
@@ -124,7 +166,7 @@ All operate on provided dates — never use current time.
 | `datetime_days_in_month` | `year`, `month` | Days in month |
 | `datetime_week_number` | `date_string` | ISO week number |
 
-### Validation (8 tools)
+### Validation
 
 All return `{valid: bool, reason: string}`.
 
@@ -139,7 +181,7 @@ All return `{valid: bool, reason: string}`.
 | `validation_is_palindrome` | `text` | Palindrome check |
 | `validation_matches_regex` | `text`, `pattern` | Regex match check |
 
-### Conversion (8 tools)
+### Conversion
 
 | Tool | Params | Description |
 |------|--------|-------------|
@@ -152,7 +194,7 @@ All return `{valid: bool, reason: string}`.
 | `conversion_hex_to_rgb` | `hex_color` | Hex to RGB |
 | `conversion_decimal_to_binary` | `value` | Decimal to binary string |
 
-### Echo / Protocol Testing (8 tools)
+### Echo / Protocol Testing
 
 | Tool | Params | Description |
 |------|--------|-------------|
@@ -170,6 +212,67 @@ All return `{valid: bool, reason: string}`.
 | Tool | Params | Description |
 |------|--------|-------------|
 | `get_weather` | `city` | Fixed response: 77°F, sunny, always |
+
+### Task
+
+| Tool | Params | Description |
+|------|--------|-------------|
+| `task_run` | `tool`, `arguments`?, `working_polls`?, `poll_interval_ms`? | Run another tool as an MCP task |
+| `task_scripted` | `outcome`?, `message`?, `working_polls`?, `poll_interval_ms`? | Scripted task outcome |
+
+See [MCP Tasks extension](#mcp-tasks-extension).
+
+## MCP Tasks extension
+
+The server implements the MCP Tasks extension (`io.modelcontextprotocol/tasks`, protocol `2026-07-28`): `tools/call` can return a `CreateTaskResult`, and the client polls it with `tasks/get` and can stop it with `tasks/cancel`. `tasks/update` is acknowledged.
+
+A call runs as a task only when **all** are true:
+
+- the tool is `task_run` or `task_scripted`,
+- the request uses protocol `2026-07-28` or later, and
+- the request declares the extension in `params._meta["io.modelcontextprotocol/clientCapabilities"].extensions`.
+
+An older session (for example `2025-11-25` over stdio, after `initialize`) always gets the synchronous result, even if it declared the extension in `initialize`: that protocol cannot carry a task result, and the server does not offer the extension to it.
+
+Every other call answers at once. That includes all other tools, called by a Tasks client. A client without the extension, and the REST API, run `task_run` and `task_scripted` synchronously.
+
+Each task is scripted by its arguments, so a test controls every step. `tasks/get` reports `working` for `working_polls` checks (default 2), then the final outcome.
+
+| Call | Final `tasks/get` answer |
+|------|--------------------------|
+| `task_run` `{tool, arguments}` | `completed`, `result` = that tool's `CallToolResult` (a tool error is `result.isError: true`) |
+| `task_scripted` `outcome: "completed"` | `completed`, `result` = `{"result": message}` |
+| `task_scripted` `outcome: "tool_error"` | `completed`, `result.isError: true` |
+| `task_scripted` `outcome: "failed"` | `failed`, `error: {code: -32603, message}` |
+| `task_scripted` `outcome: "cancelled"` | `cancelled`, `statusMessage` = message |
+| `task_scripted` `outcome: "input_required"` | `input_required`, `inputRequests` = one fixed `elicitation/create` request under key `confirm` (`message` is its text). The task stays `input_required` until `tasks/cancel` |
+| `task_scripted` any other `outcome` | that status as given (for example `working` never finishes, or an unsupported status) |
+
+Details:
+
+- **Task IDs** are `task-1`, `task-2`, ... in creation order, per server process. All clients share this sequence, so tests that run in parallel against one server (for example `pytest -n 3`) get interleaved IDs. Always use the `taskId` that `tools/call` returns; never hard-code a task ID.
+- **Lifetime and limits:** a task stays readable for its `ttlMs` after it is created, whatever its status, and whether or not the client read or cancelled it. Then it is removed, and its ID gives `-32602`. The store holds up to `--max-tasks` tasks. When it is full, a new task is refused with JSON-RPC error `-32603` ("task store is full"); other tools still answer. A result over `--max-task-result-bytes` as JSON is not kept: the task ends `failed`, with an error that names the size and the limit. `content` and `structuredContent` both carry a tool's text, so `echo_large` of N KB is about 2N KB as JSON.
+- **`pollIntervalMs`** is `poll_interval_ms` (default 1000) on every non-terminal answer. `0` omits it.
+- **`ttlMs`** is `--task-ttl-ms`. Expiry uses the server's monotonic clock, which never appears in a response.
+- **`createdAt` / `lastUpdatedAt`** (ISO-8601, required by the extension) come from a logical clock, not the current time: task N is created at `2026-01-01T00:00:00Z` + N seconds, and each `tasks/get` advances `lastUpdatedAt` by one second until the check that reports the final outcome. After that it no longer changes.
+- **`tasks/cancel`** acknowledges with `{"resultType": "complete"}`. A task that has not finished becomes `cancelled` with `statusMessage: "Cancelled by client"`. A finished task is left as it is.
+- **`tasks/update`** acknowledges with `{"resultType": "complete"}` and changes nothing. The answer to an `input_required` task's `confirm` request is ignored too: the task does not resume. The task must exist.
+- **Errors:** an unknown or expired task ID gives `-32602` (on `tasks/get`, `tasks/cancel` and `tasks/update`). A `tasks/*` request that does not declare the extension gives `-32021` with `requiredCapabilities`.
+
+Example (HTTP, stateless `2026-07-28` request):
+
+```bash
+META='"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientInfo":{"name":"curl","version":"1"},"io.modelcontextprotocol/clientCapabilities":{"extensions":{"io.modelcontextprotocol/tasks":{}}}}'
+H=(-H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -H 'MCP-Protocol-Version: 2026-07-28')
+
+curl -s localhost:3001/mcp "${H[@]}" -H 'Mcp-Method: tools/call' -H 'Mcp-Name: task_run' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"task_run","arguments":{"tool":"math_add","arguments":{"a":2,"b":3}},'"$META"'}}'
+# result: {"resultType":"task","taskId":"task-1","status":"working","pollIntervalMs":1000,...}
+
+curl -s localhost:3001/mcp "${H[@]}" -H 'Mcp-Method: tasks/get' -H 'Mcp-Name: task-1' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tasks/get","params":{"taskId":"task-1",'"$META"'}}'
+# working, working, then: {"status":"completed","result":{"content":[{"type":"text","text":"{\"result\": 5.0}"}],...}}
+```
 
 ## REST API
 
@@ -205,7 +308,7 @@ With auth enabled, include `Authorization: Bearer <key>` on all requests.
 python3 -m pytest tests/ -v
 ```
 
-389 tests covering all tools, REST API endpoints, auth, OpenAPI spec, and integration.
+Tests cover all tools, the MCP Tasks extension, REST API endpoints, auth, OpenAPI spec, and integration.
 
 ## Project Structure
 
@@ -225,7 +328,8 @@ mcp-testkit/
 │       ├── datetime_tools.py
 │       ├── validation_tools.py
 │       ├── conversion_tools.py
-│       └── echo_tools.py      # Includes get_weather
+│       ├── echo_tools.py      # Includes get_weather
+│       └── task_tools.py      # task_* tools + MCP Tasks extension
 └── tests/
     ├── test_math_tools.py
     ├── test_string_tools.py
@@ -235,6 +339,8 @@ mcp-testkit/
     ├── test_validation_tools.py
     ├── test_conversion_tools.py
     ├── test_echo_tools.py
+    ├── test_task_tools.py
     ├── test_api.py
-    └── test_integration.py
+    ├── test_integration.py
+    └── test_e2e.py             # Starts a real server process
 ```

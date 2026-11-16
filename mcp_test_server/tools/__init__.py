@@ -8,6 +8,7 @@ from mcp_test_server.tools import (
     encoding_tools,
     math_tools,
     string_tools,
+    task_tools,
     validation_tools,
 )
 
@@ -20,6 +21,7 @@ ALL_GROUPS = [
     validation_tools,
     conversion_tools,
     echo_tools,
+    task_tools,
 ]
 
 

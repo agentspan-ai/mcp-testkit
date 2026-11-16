@@ -4,46 +4,52 @@ import asyncio
 import json
 import unittest
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
+from mcp_test_server.api import ENDPOINTS
 from mcp_test_server.tools import register_all
+
+GROUP_PREFIXES = (
+    "math_",
+    "string_",
+    "collection_",
+    "encoding_",
+    "datetime_",
+    "validation_",
+    "conversion_",
+    "echo_",
+    "task_",
+)
+# Tools whose names do not start with a group prefix.
+UNPREFIXED_TOOLS = {"echo", "get_weather"}
 
 
 def _make_server():
-    mcp = FastMCP(name="test")
+    mcp = MCPServer(name="test")
     register_all(mcp)
     return mcp
 
 
 def _call(mcp, name, args):
     result = asyncio.run(mcp.call_tool(name, args))
-    if isinstance(result, tuple):
-        result = result[0]
-    return json.loads(result[0].text)
+    return json.loads(result.content[0].text)
 
 
 class TestIntegration(unittest.TestCase):
     def setUp(self):
         self.mcp = _make_server()
 
-    def test_all_65_tools_registered(self):
-        """Verify exactly 65 tools are registered."""
-        tools = asyncio.run(self.mcp.list_tools())
-        self.assertEqual(len(tools), 65, f"Expected 65 tools, got {len(tools)}: {[t.name for t in tools]}")
+    def test_every_tool_has_a_rest_endpoint(self):
+        """Every registered tool has exactly one REST endpoint, and every endpoint calls a registered tool."""
+        tools = sorted(t.name for t in asyncio.run(self.mcp.list_tools()))
+        endpoint_tools = sorted(tool for _path, _method, tool, _summary, _params in ENDPOINTS)
+        self.assertEqual(tools, endpoint_tools)
 
-    def test_tool_groups_have_8_each(self):
-        """Verify each group prefix has exactly 8 tools."""
-        tools = asyncio.run(self.mcp.list_tools())
-        names = [t.name for t in tools]
-        prefixes = ["math_", "string_", "collection_", "encoding_", "datetime_", "validation_", "conversion_"]
-        for prefix in prefixes:
-            group = [n for n in names if n.startswith(prefix)]
-            self.assertEqual(len(group), 8, f"Group '{prefix}' has {len(group)} tools: {group}")
-        # echo group: "echo" plus 7 "echo_*" tools + get_weather
-        echo_group = [n for n in names if n == "echo" or n.startswith("echo_")]
-        self.assertEqual(len(echo_group), 8, f"Group 'echo' has {len(echo_group)} tools: {echo_group}")
-        # get_weather is a standalone test fixture tool
-        self.assertIn("get_weather", names)
+    def test_every_tool_belongs_to_a_group(self):
+        """Every tool name starts with a group prefix (see AGENTS.md conventions)."""
+        for tool in asyncio.run(self.mcp.list_tools()):
+            if tool.name not in UNPREFIXED_TOOLS:
+                self.assertTrue(tool.name.startswith(GROUP_PREFIXES), f"Tool {tool.name} has no group prefix")
 
     def test_all_tools_have_descriptions(self):
         """Verify every tool has a description."""
@@ -67,11 +73,7 @@ class TestIntegration(unittest.TestCase):
         for name, args in test_cases:
             r1 = asyncio.run(self.mcp.call_tool(name, args))
             r2 = asyncio.run(self.mcp.call_tool(name, args))
-            if isinstance(r1, tuple):
-                r1 = r1[0]
-            if isinstance(r2, tuple):
-                r2 = r2[0]
-            self.assertEqual(r1[0].text, r2[0].text, f"Tool {name} is not deterministic")
+            self.assertEqual(r1.content[0].text, r2.content[0].text, f"Tool {name} is not deterministic")
 
     def test_all_tool_names_unique(self):
         """Verify no duplicate tool names."""

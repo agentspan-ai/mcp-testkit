@@ -10,6 +10,8 @@ import unittest
 
 import requests
 
+from mcp_test_server.api import ENDPOINTS
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -101,7 +103,7 @@ class TestE2EOpenAPI(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         spec = r.json()
         self.assertEqual(spec["openapi"], "3.0.3")
-        self.assertEqual(len(spec["paths"]), 65)
+        self.assertEqual(set(spec["paths"]), {path for path, *_ in ENDPOINTS})
 
     def test_api_docs_content_type(self):
         r = requests.get(f"{BASE_URL}/api-docs")
@@ -495,9 +497,7 @@ class TestE2EAuth(unittest.TestCase):
 class TestE2EAllEndpointsReachable(unittest.TestCase):
     """Verify every registered endpoint returns a non-500 response."""
 
-    def test_all_65_endpoints_respond(self):
-        from mcp_test_server.api import ENDPOINTS
-
+    def test_all_endpoints_respond(self):
         # Minimal valid payloads per type
         type_defaults = {
             "number": 1.0,

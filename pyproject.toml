@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mcp-testkit"
-version = "1.0.4"
-description = "MCP test server with 65 deterministic tools for protocol testing"
+version = "1.1.0"
+description = "MCP test server with deterministic tools for protocol testing"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
@@ -24,7 +24,7 @@ classifiers = [
     "Topic :: Software Development :: Testing",
 ]
 dependencies = [
-    "mcp[cli]>=1.0.0,<2.0.0",
+    "mcp[cli]>=2.3.0,<3.0.0",
     "requests",
 ]
 
