@@ -466,6 +466,31 @@ ENDPOINTS = [
             ("obj_param", "object", True, "Object parameter"),
         ],
     ),
+    # --- Task (POST) ---
+    (
+        "/api/task/run",
+        "POST",
+        "task_run",
+        "Run another tool (as an MCP task for a Tasks client; synchronously here)",
+        [
+            ("tool", "string", True, "Name of the tool to run"),
+            ("arguments", "object", False, "Arguments for the tool"),
+            ("working_polls", "integer", False, "tasks/get checks that report working (0-100, default 2)"),
+            ("poll_interval_ms", "integer", False, "pollIntervalMs to suggest (0-60000, 0 omits it; default 1000)"),
+        ],
+    ),
+    (
+        "/api/task/scripted",
+        "POST",
+        "task_scripted",
+        "Scripted task outcome (as an MCP task for a Tasks client; synchronously here)",
+        [
+            ("outcome", "string", False, "completed, failed, cancelled, tool_error, input_required, or any status"),
+            ("message", "string", False, "Result text, error message or statusMessage"),
+            ("working_polls", "integer", False, "tasks/get checks that report working (0-100, default 2)"),
+            ("poll_interval_ms", "integer", False, "pollIntervalMs to suggest (0-60000, 0 omits it; default 1000)"),
+        ],
+    ),
     # --- Weather (GET) ---
     (
         "/api/weather",
@@ -524,9 +549,11 @@ def _make_post_handler(mcp, tool_name):
 async def _call_tool(mcp, tool_name, args):
     """Call an MCP tool and return the parsed JSON result."""
     try:
-        result = await mcp.call_tool(tool_name, args)
-        if isinstance(result, tuple):
-            result = result[0]
+        call = await mcp.call_tool(tool_name, args)
+        result = call.content
+        if call.is_error:
+            # A tool that returns an error result (task_run reports a nested tool error this way).
+            return {"error": " ".join(getattr(r, "text", "") for r in result)}
         if len(result) == 1:
             try:
                 return json.loads(result[0].text)
@@ -608,7 +635,7 @@ def _build_openapi_spec():
         "openapi": "3.0.3",
         "info": {
             "title": "MCP Test Server API",
-            "description": "REST API for 65 deterministic MCP test tools across 8 groups.",
+            "description": "REST API for the deterministic MCP test tools.",
             "version": "1.0.0",
         },
         "paths": paths,
@@ -640,7 +667,7 @@ def _get_openapi_spec():
 
 
 def create_api_routes(mcp):
-    """Create all HTTP API routes + /api-docs for the given FastMCP server."""
+    """Create all HTTP API routes + /api-docs for the given MCPServer."""
     routes = []
     for path, method, tool_name, _summary, params in ENDPOINTS:
         if method == "GET":

@@ -63,11 +63,11 @@ jobs:
       - name: Verify CLI entry point
         run: mcp-testkit --help
 
-      - name: Verify SSE server starts and responds
+      - name: Verify HTTP server starts and responds
         run: |
           mcp-testkit --transport http --port 3001 &
           sleep 3
-          curl -sf http://127.0.0.1:3001/api-docs | python -c "import sys,json; d=json.load(sys.stdin); assert d['openapi']=='3.0.3'; assert len(d['paths'])==65"
+          curl -sf http://127.0.0.1:3001/api-docs | python -c "import sys,json; d=json.load(sys.stdin); from mcp_test_server.api import ENDPOINTS; assert d['openapi']=='3.0.3'; assert set(d['paths'])=={e[0] for e in ENDPOINTS}"
           curl -sf "http://127.0.0.1:3001/api/math/add?a=2&b=3" | python -c "import sys,json; d=json.load(sys.stdin); assert d['result']==5.0"
           curl -sf -X POST http://127.0.0.1:3001/api/string/reverse -H 'Content-Type: application/json' -d '{"text":"hello"}' | python -c "import sys,json; d=json.load(sys.stdin); assert d['result']=='olleh'"
           kill %1

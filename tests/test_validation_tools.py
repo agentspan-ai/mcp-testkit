@@ -3,11 +3,11 @@
 import asyncio
 import json
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 
 def _make_server():
-    mcp = FastMCP(name="test")
+    mcp = MCPServer(name="test")
     from mcp_test_server.tools.validation_tools import register
 
     register(mcp)
@@ -16,9 +16,7 @@ def _make_server():
 
 def _call(mcp, name, args):
     result = asyncio.run(mcp.call_tool(name, args))
-    # call_tool returns (list[TextContent], meta); we need the first content item
-    content = result[0]
-    text = content[0].text if isinstance(content, list) else content.text
+    text = result.content[0].text
     return json.loads(text)
 
 

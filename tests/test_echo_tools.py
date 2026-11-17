@@ -3,28 +3,28 @@
 import asyncio
 import json
 
-from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import TextContent
 
 from mcp_test_server.tools.echo_tools import register
 
 
 def _make_server():
-    mcp = FastMCP(name="test")
+    mcp = MCPServer(name="test")
     register(mcp)
     return mcp
 
 
 def _call(mcp, name, args):
     result = asyncio.run(mcp.call_tool(name, args))
-    content_list = result[0] if isinstance(result, tuple) else result
+    content_list = result.content
     return json.loads(content_list[0].text)
 
 
 def _call_raw(mcp, name, args):
     result = asyncio.run(mcp.call_tool(name, args))
-    return result[0] if isinstance(result, tuple) else result
+    return result.content
 
 
 # ---------- echo ----------

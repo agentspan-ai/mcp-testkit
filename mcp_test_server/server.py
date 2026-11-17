@@ -1,21 +1,32 @@
-"""MCP Test Server — 65 deterministic tools for MCP protocol testing."""
+"""MCP Test Server — deterministic tools for MCP protocol testing."""
 
 import argparse
 import asyncio
 
 import uvicorn
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
+from mcp.server.transport_security import DEFAULT_MAX_REQUEST_BODY_SIZE
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from mcp_test_server import __version__
 from mcp_test_server.api import create_api_routes
 from mcp_test_server.tools import register_all
+from mcp_test_server.tools.task_tools import (
+    DEFAULT_MAX_RESULT_BYTES,
+    DEFAULT_MAX_TASKS,
+    DEFAULT_TASK_TTL_MS,
+    TasksExtension,
+)
 
-mcp = FastMCP(
+tasks_extension = TasksExtension()
+
+mcp = MCPServer(
     name="mcp-testkit",
-    instructions="A test server with 65 deterministic tools across 8 groups for MCP protocol testing.",
-    stateless_http=True,
+    version=__version__,
+    instructions="A test server with deterministic tools for MCP protocol testing.",
+    extensions=[tasks_extension],
 )
 
 register_all(mcp)
@@ -35,9 +46,13 @@ class BearerAuthMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-def _build_http_app(auth_key=None):
-    """Build Streamable HTTP Starlette app with REST API routes and optional auth."""
-    app = mcp.streamable_http_app()
+def _build_http_app(auth_key=None, host="127.0.0.1", max_request_body_size=DEFAULT_MAX_REQUEST_BODY_SIZE):
+    """Build Streamable HTTP Starlette app with REST API routes and optional auth.
+
+    `max_request_body_size` bounds `/mcp` request bodies (413 above it). The SDK default, 4 MiB, is
+    a security fix (GHSA-fmmv-w9g8-j3gc): without a limit, one large request can exhaust memory.
+    """
+    app = mcp.streamable_http_app(stateless_http=True, host=host, max_request_body_size=max_request_body_size)
 
     # Add REST API routes
     api_routes = create_api_routes(mcp)
@@ -50,7 +65,17 @@ def _build_http_app(auth_key=None):
     return app
 
 
-def main():
+def _positive_int(value):
+    try:
+        number = int(value)
+    except ValueError:
+        number = 0
+    if number <= 0:
+        raise argparse.ArgumentTypeError(f"must be a positive integer, got {value!r}")
+    return number
+
+
+def _parse_args(argv=None):
     parser = argparse.ArgumentParser(description="MCP Test Server")
     parser.add_argument(
         "--transport",
@@ -61,13 +86,54 @@ def main():
     parser.add_argument("--host", default="127.0.0.1", help="HTTP host (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=3001, help="HTTP port (default: 3001)")
     parser.add_argument("--auth", default=None, help="Bearer auth key (enables authentication for HTTP)")
-    args = parser.parse_args()
+    parser.add_argument(
+        "--max-request-body-size",
+        type=_positive_int,
+        default=DEFAULT_MAX_REQUEST_BODY_SIZE,
+        metavar="BYTES",
+        help=(
+            "Largest /mcp request body in bytes; larger requests get HTTP 413 "
+            f"(default: {DEFAULT_MAX_REQUEST_BODY_SIZE}, 4 MiB, the MCP SDK default)"
+        ),
+    )
+    parser.add_argument(
+        "--max-tasks",
+        type=_positive_int,
+        default=DEFAULT_MAX_TASKS,
+        metavar="N",
+        help=f"Most MCP tasks kept at once; when full, a new task is refused (default: {DEFAULT_MAX_TASKS})",
+    )
+    parser.add_argument(
+        "--max-task-result-bytes",
+        type=_positive_int,
+        default=DEFAULT_MAX_RESULT_BYTES,
+        metavar="BYTES",
+        help=(
+            "Largest result one MCP task keeps, as JSON; a larger result makes the task fail "
+            f"(default: {DEFAULT_MAX_RESULT_BYTES}, 10 MiB)"
+        ),
+    )
+    parser.add_argument(
+        "--task-ttl-ms",
+        type=_positive_int,
+        default=DEFAULT_TASK_TTL_MS,
+        metavar="MS",
+        help=(
+            "How long an MCP task stays readable after it is created; also the ttlMs sent to clients "
+            f"(default: {DEFAULT_TASK_TTL_MS}, 1 hour)"
+        ),
+    )
+    return parser.parse_args(argv)
+
+
+def main():
+    args = _parse_args()
+    tasks_extension.configure(
+        max_tasks=args.max_tasks, max_result_bytes=args.max_task_result_bytes, ttl_ms=args.task_ttl_ms
+    )
 
     if args.transport == "http":
-        mcp.settings.host = args.host
-        mcp.settings.port = args.port
-
-        app = _build_http_app(auth_key=args.auth)
+        app = _build_http_app(auth_key=args.auth, host=args.host, max_request_body_size=args.max_request_body_size)
         config = uvicorn.Config(
             app,
             host=args.host,

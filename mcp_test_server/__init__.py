@@ -1,3 +1,3 @@
-"""MCP Test Server — 65 deterministic tools for MCP protocol testing."""
+"""MCP Test Server — deterministic tools for MCP protocol testing."""
 
-__version__ = "1.0.4"
+__version__ = "1.1.0"
